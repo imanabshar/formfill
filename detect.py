@@ -34,6 +34,21 @@ def detect_lines(pdf_path):
     return results
 
 
+def save_preview_images(pdf_path):
+    """Save one PNG per page with detected horizontal lines drawn in red."""
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_num, page in enumerate(pdf.pages, start=1):
+            img = page.to_image(resolution=150)
+
+            for line in page.lines:
+                if abs(line["y1"] - line["y0"]) < 1:
+                    img.draw_line(line, stroke="red", stroke_width=3)
+
+            output_file = f"page_{page_num}_preview.png"
+            img.save(output_file)
+            print(f"Saved {output_file}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Detect horizontal lines in a PDF and output their coordinates as JSON."
@@ -43,6 +58,11 @@ def main():
         "-o", "--output",
         default="detected-lines.json",
         help="Path to save the output JSON (default: detected-lines.json)"
+    )
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Also save png images with detected lines drawn in red"
     )
 
     args = parser.parse_args()
@@ -60,6 +80,10 @@ def main():
         json.dump(results, f, indent=2)
 
     print(f"\nSaved to {args.output}")
+
+    if args.preview:
+        print()
+        save_preview_images(args.pdf_path)
 
 
 if __name__ == "__main__":
