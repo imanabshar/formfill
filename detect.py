@@ -28,6 +28,9 @@ def detect_lines(pdf_path):
                         "width": width
                     })
 
+    # sort by page and y as pdfplumber returns lines in pdf drawing order
+    # not necessarily top to bottom, so we are fixing that here 
+    results.sort(key=lambda r: (r["page"], r["y"])) 
     return results
 
 
