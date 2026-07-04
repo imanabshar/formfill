@@ -7,7 +7,6 @@ def detect_lines(pdf_path):
 
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
-            page_height = page.height
 
             for line in page.lines:
 
@@ -16,8 +15,7 @@ def detect_lines(pdf_path):
                     x0 = round(line["x0"], 1)
                     x1 = round(line["x1"], 1)
 
-                    # flipping the y-coords because pdf coordinate system has origin at bottom-left
-                    y = round(page_height - line["y0"], 1)
+                    y = round(line["y0"], 1)
                     width = round(x1 - x0, 1)
 
                     results.append({
@@ -28,9 +26,9 @@ def detect_lines(pdf_path):
                         "width": width
                     })
 
-    # sort by page and y as pdfplumber returns lines in pdf drawing order
-    # not necessarily top to bottom, so we are fixing that here 
-    results.sort(key=lambda r: (r["page"], r["y"])) 
+    # pdfplumber returns lines in pdf drawing order and pdfs measures y from bottom so bigger y means closer to top
+    # we sort by page asc and y desc, so resuts come out top to bottom 
+    results.sort(key=lambda r: (r["page"], -r["y"])) 
     return results
 
 
