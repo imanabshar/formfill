@@ -1,6 +1,7 @@
 import argparse
 import json
 import pdfplumber
+from PIL import ImageDraw, ImageFont
 
 def detect_lines(pdf_path):
     results = []
@@ -29,11 +30,17 @@ def detect_lines(pdf_path):
     # pdfplumber returns lines in pdf drawing order and pdfs measures y from bottom so bigger y means closer to top
     # we sort by page asc and y desc, so resuts come out top to bottom 
     results.sort(key=lambda r: (r["page"], -r["y"])) 
+
+    # give every line an index based on its position in the sorted list
+    # values.json will use this number to know which field is which
+    for i, r in enumerate(results):
+        r["index"] = i
+
     return results
 
 
-def save_preview_images(pdf_path):
-    """Save one PNG per page with detected horizontal lines drawn in red."""
+def save_preview_images(pdf_path, results):
+    """Save one PNG per page with detected horizontal lines drawn in red, labeled with their index."""
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
             img = page.to_image(resolution=150)
@@ -42,8 +49,24 @@ def save_preview_images(pdf_path):
                 if abs(line["y1"] - line["y0"]) < 1:
                     img.draw_line(line, stroke="red", stroke_width=3)
 
+            pil_image = img.annotated
+            draw = ImageDraw.Draw(pil_image)
+            scale = img.scale
+
+            try:
+                font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+            except OSError:
+                font = ImageFont.load_default()
+
+            for r in results:
+                if r["page"] != page_num:
+                    continue
+                label_x = r["x0"] * scale
+                label_y = (page.height - r["y"]) * scale - 25  
+                draw.text((label_x, label_y), str(r["index"]), fill="blue", font=font)
+
             output_file = f"page_{page_num}_preview.png"
-            img.save(output_file)
+            pil_image.save(output_file)
             print(f"Saved {output_file}")
 
 
@@ -70,7 +93,7 @@ def main():
     print(f"\nDetected {len(results)} horizontal lines:\n")
     for r in results:
         print(
-            f"Page {r['page']} -> "
+            f"[{r['index']}] Page {r['page']} -> "
             f"x0:{r['x0']} x1:{r['x1']} y:{r['y']} width:{r['width']}"
         )
 
@@ -81,7 +104,7 @@ def main():
 
     if args.preview:
         print()
-        save_preview_images(args.pdf_path)
+        save_preview_images(args.pdf_path, results)
 
 
 if __name__ == "__main__":
