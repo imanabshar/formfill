@@ -3,6 +3,25 @@ import json
 import io            
 from pypdf import PdfReader, PdfWriter   
 from reportlab.pdfgen import canvas      
+from reportlab.pdfbase.pdfmetrics import stringWidth
+
+
+DEFAULT_FONT = "Helvetica"
+DEFAULT_FONT_SIZE = 12
+MIN_FONT_SIZE = 6
+
+
+def fit_font_size(text, max_width, font_name=DEFAULT_FONT, start_size=DEFAULT_FONT_SIZE, min_size=MIN_FONT_SIZE):
+    """Return the largest font size (down to min_size) at which text fits within max_width."""
+
+    size = start_size
+    while size > min_size:
+        width = stringWidth(text, font_name, size)
+        if width <= max_width:
+            return size
+        size -= 1
+    return min_size
+
 
 def build_overlays(pdf_path, detected_lines, field_values):
     """Create one blank page with text drawn on it per PDF page that needs filling."""
@@ -33,6 +52,16 @@ def build_overlays(pdf_path, detected_lines, field_values):
                 "canvas": canvas.Canvas(buffer, pagesize=(page_width, page_height))
             }
 
+        # shrink font to fit the line's width if the text is too long at the default size
+        max_width = line["width"]
+        font_size = fit_font_size(text, max_width, DEFAULT_FONT, DEFAULT_FONT_SIZE, MIN_FONT_SIZE)
+        if font_size < DEFAULT_FONT_SIZE:
+            print(
+                f"Note: shrinking font for index {index} ('{text}') "
+                f"to {font_size}pt to fit line width {max_width}"
+            )
+
+        overlays[page_num]["canvas"].setFont(DEFAULT_FONT, font_size)
         overlays[page_num]["canvas"].drawString(line["x0"], line["y"] + 2, text)
 
     for page_num in overlays:
@@ -77,13 +106,13 @@ def main():
     args = parser.parse_args() 
 
     with open(args.detected_json) as f:
+
         detected_lines = json.load(f)   
 
     with open(args.values_json) as f:
-        field_values = json.load(f)    
-
+        field_values = json.load(f)   
+        
     fill_pdf(args.pdf_path, detected_lines, field_values, args.output)
-
     print(f"Saved filled PDF to {args.output}")
 
 
