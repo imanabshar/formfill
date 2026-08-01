@@ -1,6 +1,6 @@
 # Formfill
 
-A command-line tool that detects fillable lines in a PDF and writes text onto them.
+A command-line tool that detects fillable lines in a PDF and writes text onto them. 
 
 ## About the Project
 
@@ -12,7 +12,7 @@ Filling one out once is manageable. Filling out the same template repeatedly mea
 
 Formfill works in two stages: detection and filling.
 
-* **Detection** `detect.py` scans the PDF, identifies horizontal blank lines that represent form fields, and records each line's page, position, width, and index. Results are saved to `detected-lines.json`. Optionally, it can also generate a preview image for each page, highlighting every detected line in red and labeling it with its index, making it easy to see which line corresponds to which entry in the JSON file. 
+* **Detection** `detect.py` scans the PDF and identifies horizontal, vector-drawn lines that represent form fields and records each line's page, position, width, and index. Results are saved to `detected-lines.json`. Optionally, it can also generate a preview image for each page, highlighting every detected line in red and labeling it with its index, making it easy to see which line corresponds to which entry in the JSON file. 
 
 * **Filling** Create a simple JSON file that maps each line index to the text you want to insert. `fill.py` reads your values together with `detected-lines.json`, places each value at the corresponding position, and generates a new PDF with the text filled in. The original PDF is never modified.
 
@@ -39,14 +39,24 @@ python3 detect.py your-form.pdf --preview
 This generates a `detected-lines.json` file:
 
 ```json
-{
-  "index": 0,
-  "page": 1,
-  "x0": 69.1,
-  "x1": 542.1,
-  "y": 722.6,
-  "width": 473.0
-}
+[
+  {
+    "page": 1,
+    "x0": 69.1,
+    "x1": 542.1,
+    "y": 722.6,
+    "width": 473.0,
+    "index": 0
+  },
+  {
+    "page": 1,
+    "x0": 69.1,
+    "x1": 300.0,
+    "y": 690.2,
+    "width": 230.9,
+    "index": 1
+  }
+]
 ```
 
 If `--preview` is provided, a labeled PNG is generated for each page showing every detected line and its index. Use these preview images to identify which index corresponds to each field before creating your values file.
@@ -92,5 +102,7 @@ python3 fill.py your-form.pdf detected-lines.json values.json -o filled-form.pdf
 ![reportlab](https://img.shields.io/badge/reportlab-2E7D32?style=for-the-badge)
 &nbsp;&nbsp;
 ![pypdf](https://img.shields.io/badge/pypdf-D32F2F?style=for-the-badge)
+&nbsp;&nbsp;
+![Pillow](https://img.shields.io/badge/Pillow-663399?style=for-the-badge)
 
 </div>
