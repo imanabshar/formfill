@@ -23,7 +23,7 @@ def fit_font_size(text, max_width, font_name=DEFAULT_FONT, start_size=DEFAULT_FO
     return min_size
 
 
-def build_overlays(pdf_path, detected_lines, field_values):
+def build_overlays(pdf_path, detected_lines, field_values, font_size=DEFAULT_FONT_SIZE):
     """Create one blank page with text drawn on it per PDF page that needs filling."""
 
     reader = PdfReader(pdf_path)  
@@ -54,14 +54,14 @@ def build_overlays(pdf_path, detected_lines, field_values):
 
         # shrink font to fit the line's width if the text is too long at the default size
         max_width = line["width"]
-        font_size = fit_font_size(text, max_width, DEFAULT_FONT, DEFAULT_FONT_SIZE, MIN_FONT_SIZE)
-        if font_size < DEFAULT_FONT_SIZE:
+        fitted_size = fit_font_size(text, max_width, DEFAULT_FONT, font_size, MIN_FONT_SIZE)
+        if fitted_size < font_size:
             print(
                 f"Note: shrinking font for index {index} ('{text}') "
-                f"to {font_size}pt to fit line width {max_width}"
+                f"to {fitted_size}pt to fit line width {max_width}"
             )
 
-        overlays[page_num]["canvas"].setFont(DEFAULT_FONT, font_size)
+        overlays[page_num]["canvas"].setFont(DEFAULT_FONT, fitted_size)
         overlays[page_num]["canvas"].drawString(line["x0"], line["y"] + 2, text)
 
     for page_num in overlays:
@@ -71,11 +71,11 @@ def build_overlays(pdf_path, detected_lines, field_values):
     return overlays 
 
 
-def fill_pdf(pdf_path, detected_lines, field_values, output_path):
+def fill_pdf(pdf_path, detected_lines, field_values, output_path, font_size=DEFAULT_FONT_SIZE):
     reader = PdfReader(pdf_path)   
     writer = PdfWriter()           
 
-    overlays = build_overlays(pdf_path, detected_lines, field_values) 
+    overlays = build_overlays(pdf_path, detected_lines, field_values, font_size) 
 
     for i, page in enumerate(reader.pages, start=1):
         if i in overlays:
@@ -102,6 +102,12 @@ def main():
         default="output.pdf",
         help="Path to save the filled PDF (default: filled-output.pdf)"
     )
+    parser.add_argument(
+        "-f", "--font-size",
+        type=int,
+        default=DEFAULT_FONT_SIZE,
+        help=f"Starting font size before auto-shrink kicks in (default: {DEFAULT_FONT_SIZE})"
+    )
 
     args = parser.parse_args() 
 
@@ -112,7 +118,7 @@ def main():
     with open(args.values_json) as f:
         field_values = json.load(f)   
         
-    fill_pdf(args.pdf_path, detected_lines, field_values, args.output)
+    fill_pdf(args.pdf_path, detected_lines, field_values, args.output, args.font_size)
     print(f"Saved filled PDF to {args.output}")
 
 
