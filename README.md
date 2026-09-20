@@ -14,7 +14,22 @@ Formfill works in two stages: detection and filling.
 
 * **Detection** `detect.py` scans the PDF and identifies horizontal, vector-drawn lines that represent form fields and records each line's page, position, width, and index. Results are saved to `detected-lines.json`. Optionally, it can also generate a preview image for each page, highlighting every detected line in red and labeling it with its index, making it easy to see which line corresponds to which entry in the JSON file. 
 
-* **Filling** Create a simple JSON file that maps each line index to the text you want to insert. `fill.py` reads your values together with `detected-lines.json`, places each value at the corresponding position, and generates a new PDF with the text filled in. The original PDF is never modified.
+* **Filling** Create a simple JSON file that maps each line index to the text you want to insert. `fill.py` reads your values together with `detected-lines.json`, places each value at the corresponding position, and generates a new PDF with the text filled in. Text is drawn at a configurable starting font size, and automatically shrinks per field if it's too wide to fit its line. The original PDF is never modified.
+
+## Example
+
+Here's the full pipeline run against a sample [Pet Adoption Application](assets/pet_adoption_application.pdf):
+
+<table>
+<tr>
+<th>Detected Lines</th>
+<th>Filled</th>
+</tr>
+<tr>
+<td><img src="assets/detected_preview.png" width="400"/></td>
+<td><img src="assets/pdf_filled.png" width="400"/></td>
+</tr>
+</table>
 
 ## Installation & Usage
 
@@ -90,6 +105,7 @@ python3 fill.py your-form.pdf detected-lines.json values.json -o filled-form.pdf
 **Options**
 
 * `-o`, `--output` — Output PDF filename (default: `filled-output.pdf`)
+* `-f`, `--font-size` — Starting font size in points before auto-shrink kicks in (default: `12`)
 
 ## Built With
 
